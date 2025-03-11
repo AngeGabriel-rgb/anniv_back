@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // ou "postgresql", "mysql", etc.
+  url      = "file:./dev.db"
+}
+
+
+model Participant {
+  id           Int           @id @default(autoincrement())
+  nom          String
+  prenom       String        @default("")
+  email        String        @unique
+  code_unique  String?       @unique // Code unique généré pour chaque participant
+  est_confirme Boolean       @default(false) // Pour suivre si l'email est confirmé
+  anniversaires Anniversaire[] // Relation many-to-many avec Anniversaire
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Anniversaire {
+  id           Int           @id @default(autoincrement())
+  titre        String
+  description  String        @default("")
+  date         DateTime
+  participants Participant[] // Relation many-to-many avec Participant
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Administrateur {
+  id           Int           @id @default(autoincrement())
+  nom          String
+  prenom       String        @default("")
+  email        String        @unique
+  password     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// Modèle pour stocker les tokens de confirmation
+model ConfirmationToken {
+  id           Int           @id @default(autoincrement())
+  token        String        @unique
+  email        String
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+}
