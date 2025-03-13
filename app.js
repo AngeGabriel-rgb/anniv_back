@@ -9,6 +9,10 @@ dotenv.config();
 
 const app = express();
 
+app.get('/', async (req, res) => {
+  res.send('happy birthday');
+});
+
 // Configuration du middleware
 app.use(cors());
 app.use(express.json());
@@ -17,6 +21,12 @@ app.use(express.json());
 app.use('/api/participants', participantRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/anniversaires', anniversaireRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 3001;
