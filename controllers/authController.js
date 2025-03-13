@@ -54,7 +54,7 @@ export const adminLogin = async (req, res) => {
       return res.status(401).json({ message: 'Identifiants invalides' });
     }
     
-    const token = jwt.sign({ id: admin.id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: admin.id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '72h' });
     
     res.status(200).json({ 
       token,
@@ -70,7 +70,6 @@ export const adminLogin = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la connexion' });
   }
 };
-
 // Inscription participant
 export const participantRegister = async (req, res) => {
   const { nom, prenom, email } = req.body;
@@ -247,5 +246,50 @@ export const participantLogin = async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);
     res.status(500).json({ message: 'Erreur lors de la connexion' });
+  }
+};
+// inscription administrateur
+export const adminregister = async (req, res) => {
+  const { nom, prenom, email, password } = req.body;
+  
+  if (!nom || !prenom || !email || !password) {
+    return res.status(400).json({ message: 'Tous les champs sont requis' });
+  }
+  
+  try {
+    // Vérifier si l'email existe déjà
+    const existingAdmin = await prisma.administrateur.findUnique({
+      where: { email },
+    });
+    
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+    }
+    
+    // Crypter le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Créer l'administrateur
+    const admin = await prisma.administrateur.create({
+      data: {
+        nom,
+        prenom,
+        email,
+        password: hashedPassword,
+      },
+    });
+    
+    res.status(201).json({ 
+      message: 'Inscription réussie !',
+      admin: { 
+        id: admin.id,
+        nom: admin.nom,
+        prenom: admin.prenom,
+        email: admin.email
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'inscription:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'inscription' });
   }
 };
