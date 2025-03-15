@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { sendEmail, emailTemplates } from '../utils/emailService.js';
-
 const prisma = new PrismaClient();
 
 // Fonction pour générer un code unique
@@ -523,7 +522,8 @@ export const createAdministrateur = async (req, res) => {
       },
     });
     
-    res.status(201).json(administrateur);
+    res.status(201).json(administrateur)
+    
   } catch (error) {
     console.error('Erreur lors de la création de l\'administrateur:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -615,65 +615,6 @@ export const deleteAdministrateur = async (req, res) => {
     res.json({ message: 'Administrateur supprimé avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'administrateur:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-};
-
-// ===== TABLEAU DE BORD ADMINISTRATEUR =====
-
-// Récupérer les statistiques pour le tableau de bord
-export const getDashboardStats = async (req, res) => {
-  try {
-    // Nombre total de participants
-    const participantsCount = await prisma.participant.count();
-    
-    // Nombre total d'anniversaires
-    const anniversairesCount = await prisma.anniversaire.count();
-    
-    // Nombre de participants confirmés
-    const confirmedParticipantsCount = await prisma.participant.count({
-      where: { est_confirme: true },
-    });
-    
-    // Anniversaires à venir (dans les 30 prochains jours)
-    const today = new Date();
-    const nextMonth = new Date();
-    nextMonth.setDate(today.getDate() + 30);
-    
-    const upcomingAnniversaires = await prisma.anniversaire.findMany({
-      where: {
-        date: {
-          gte: today,
-          lte: nextMonth,
-        },
-      },
-      include: {
-        participants: true,
-      },
-      orderBy: {
-        date: 'asc',
-      },
-    });
-    
-    // Participants récemment inscrits (10 derniers)
-    const recentParticipants = await prisma.participant.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 10,
-    });
-    
-    res.json({
-      stats: {
-        participantsCount,
-        anniversairesCount,
-        confirmedParticipantsCount,
-      },
-      upcomingAnniversaires,
-      recentParticipants,
-    });
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };

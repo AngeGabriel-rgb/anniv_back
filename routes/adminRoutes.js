@@ -19,7 +19,6 @@ import {
     createAdministrateur,
     updateAdministrateur,
     deleteAdministrateur,
-    getDashboardStats
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -62,12 +61,9 @@ router.post('/administrateurs', createAdministrateur);
 router.put('/administrateurs/:id', updateAdministrateur);
 router.delete('/administrateurs/:id', deleteAdministrateur);
 
-// ===== ROUTES POUR LE TABLEAU DE BORD =====
-router.get('/dashboard', getDashboardStats);
-
 //routes pour se connecter
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  res.json({ message: 'Connexion réussie' });
 });
 //routes pour se déconnecter
 router.post('/logout', (req, res) => {

@@ -1,6 +1,6 @@
 import express from 'express';
 import { 
-  adminLogin, 
+  adminlogin, 
   participantRegister, 
   confirmEmail, 
   participantLogin,
@@ -10,8 +10,8 @@ import {
 const router = express.Router();
 
 // Routes d'authentification pour les administrateurs
-router.post('/admin/login', adminLogin);
-router.post('/admin/register', adminregister);
+router.post('/admin/login', adminlogin);
+router.post('/admin/register', adminregister); 
 
 // Routes d'authentification pour les participants
 router.post('/participants/register', participantRegister);

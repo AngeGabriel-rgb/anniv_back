@@ -16,16 +16,16 @@ app.get('/', async (req, res) => {
 // Configuration du middleware
 app.use(cors());
 app.use(express.json());
-
 // Routes
 app.use('/api/participants', participantRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/anniversaires', anniversaireRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+// erreur du middleware
+app.use((req, res, next) => {
+  const error = new Error('Page non trouvée');
+  error.status = 404;
+  next(error);
 });
 
 // Démarrer le serveur

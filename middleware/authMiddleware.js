@@ -1,17 +1,26 @@
-// middleware/authMiddleware.js
+import jwt from 'jsonwebtoken'; // Make sure to import jwt
 
-export const authenticate = (req, res, next) => {
-    // Logique d'authentification ici
-    const token = req.headers['authorization'];
-  
+const authenticate = (req, res, next) => {
+  try {
+    const token = req.headers['authorization']?.replace('Bearer ', '');
+    
     if (!token) {
-      return res.status(401).json({ message: 'Accès non autorisé' });
+      return res.status(401).json({ message: 'Veuillez vous authentifier' });
     }
-  
-    // Logique pour vérifier le token (par exemple, avec JWT)
-    // Si vérification réussie :
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "anniversaire"); // Use environment variable
+
+    req.participantId = decodedToken.userId; // Adjust based on your token structure
+    req.adminId = decodedToken.adminId; // Adjust based on your token structure
+
+    if (!req.participantId) {
+      return res.status(401).json({ message: 'Veuillez vous authentifier' });
+    }
+
     next();
-  
-    // Sinon :
-    // return res.status(403).json({ message: 'Token invalide' });
-  };
+  } catch (error) {
+    res.status(401).json({ message: 'Veuillez vous authentifier' });
+  }
+};
+
+export { authenticate };
