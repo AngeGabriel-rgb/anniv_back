@@ -149,3 +149,31 @@ export const participantLogin = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+// confirmation du mail
+export const confirmEmail = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+    const { adminId, userId } = decoded;
+
+    if (adminId) {
+      await prisma.admin.update({
+        where: { id: adminId },
+        data: { emailConfirmed: true },
+      });
+      res.status(200).json({ message: 'Email administrateur confirmé' });
+    } else if (userId) {
+      await prisma.participant.update({
+        where: { id: userId },
+        data: { emailConfirmed: true },
+      });
+      res.status(200).json({ message: 'Email participant confirmé' });
+    } else {
+      res.status(400).json({ message: 'Token invalide' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la confirmation de l\'email:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
