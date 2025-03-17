@@ -18,21 +18,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-
-const sendEmail = async (to, subject, text) => {
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      text,
-    });
-  } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
-  }
-};
-
-
 // logique pour inscrire un administrateur
 export const adminregister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
@@ -42,7 +27,7 @@ export const adminregister = async (req, res) => {
   }
 
   try {
-    const adminregister = await prisma.admin.create({
+    const admin = await prisma.admin.create({
       data: {
         nom,
         prenom,
@@ -51,14 +36,13 @@ export const adminregister = async (req, res) => {
       },
     });
 
-    // creer un token
     const token = jwt.sign(
-      { adminId: adminregister.id },
-      process.env.TOKEN_SECRET,
-      { expiresIn: '24h' },
+      { adminId: admin.id },
+      process.env.jwt_SECRET,
+      { expiresIn: '72h' },
     );
 
-    res.status(201).json({ message: 'Administrateur inscrit', token });
+    res.status(201).json({ token });
   } catch (error) {
     console.error('Erreur lors de l\'inscription de l\'administrateur:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -84,8 +68,8 @@ export const adminlogin = async (req, res) => {
 
     const token = jwt.sign(
       { adminId: admin.id },
-      process.env.TOKEN_SECRET,
-      { expiresIn: '24h' },
+      process.env.jwt_SECRET,
+      { expiresIn: '72h' },
     );
 
     res.json({ token });
@@ -139,7 +123,7 @@ export const participantLogin = async (req, res) => {
 
     const token = jwt.sign(
       { userId: participant.id },
-      process.env.TOKEN_SECRET,
+      process.env.jwt_SECRET,
       { expiresIn: '48h' },
     );
 
@@ -154,7 +138,7 @@ export const confirmEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+    const decoded = jwt.verify(token, process.env.jwt_SECRET);
     const { adminId, userId } = decoded;
 
     if (adminId) {
