@@ -19,14 +19,22 @@ const transporter = nodemailer.createTransport({
   },
 });
 // logique pour inscrire un administrateur
-export const adminregister = async (req, res) => {
+export const adminRegister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
 
   if (!nom || !prenom || !email || !password) {
-    return res.status(400).json({ message: 'tous les champs sont requis' });
+    return res.status(400).json({ message: 'Tous les champs sont requis' });
   }
 
   try {
+    // Vérifier si l'email est déjà utilisé
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { email },
+    });
+    if (existingAdmin) {
+      return res.status(409).json({ message: 'Email déjà utilisé' });
+    }
+
     const admin = await prisma.admin.create({
       data: {
         nom,
@@ -38,7 +46,7 @@ export const adminregister = async (req, res) => {
 
     const token = jwt.sign(
       { adminId: admin.id },
-      process.env.jwt_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: '72h' },
     );
 
@@ -48,7 +56,6 @@ export const adminregister = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
-
 // connecter un administrateur
 export const adminlogin = async (req, res) => {
   const { email, password } = req.body;
@@ -78,6 +85,48 @@ export const adminlogin = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
+// Fonction pour connecter un utilisateur
+export const userLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  // Vérifier si tous les champs sont fournis
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Tous les champs sont requis' });
+  }
+
+  try {
+    // Trouver l'utilisateur par email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // Vérifier si l'utilisateur existe
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier le mot de passe
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Mot de passe incorrect' });
+    }
+
+    // Générer un token JWT
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: '72h' },
+    );
+
+    // Retourner le token
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Erreur lors de la connexion de l\'utilisateur:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
 
 // logique pour inscrire un participant   
 export const participantRegister = async (req, res) => {

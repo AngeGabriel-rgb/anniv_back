@@ -4,6 +4,10 @@ import adminRoutes from './routes/adminRoutes.js';
 import anniversaireRoutes from './routes/anniversaireRoutes.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 dotenv.config();
 
@@ -27,6 +31,32 @@ app.use((req, res, next) => {
   error.status = 404;
   next(error);
 });
+
+async function createSuperAdmin() {
+  const saltRounds = 10;
+  const plainPassword = "angelito2302"; // Remplacez par le mot de passe souhaité
+
+  try {
+      const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
+
+      const newUser = await prisma.user.create({
+          data: {
+              email: "gabrielange433@gmail.com",
+              password: hashedPassword,
+              role: "premieradmin",
+          },
+      });
+
+      console.log(' Administrateur créé:', newUser);
+  } catch (error) {
+      console.error('Erreur lors de la création de l\'administrateur:', error);
+  } finally {
+      await prisma.$disconnect(); // Déconnecter le client Prisma
+  }
+}
+
+// Appelez la fonction pour créer le super administrateur
+createSuperAdmin();
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 3001;

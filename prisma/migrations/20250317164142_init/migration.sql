@@ -41,6 +41,14 @@ CREATE TABLE "ConfirmationToken" (
 );
 
 -- CreateTable
+CREATE TABLE "User" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'admin'
+);
+
+-- CreateTable
 CREATE TABLE "_AnniversaireToParticipant" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
@@ -59,6 +67,9 @@ CREATE UNIQUE INDEX "Administrateur_email_key" ON "Administrateur"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ConfirmationToken_token_key" ON "ConfirmationToken"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_AnniversaireToParticipant_AB_unique" ON "_AnniversaireToParticipant"("A", "B");
