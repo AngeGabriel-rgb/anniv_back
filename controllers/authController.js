@@ -21,6 +21,7 @@ const transporter = nodemailer.createTransport({
 // logique pour inscrire un administrateur
 export const adminregister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
+  console.log("requette recue ");
 
   if (!nom || !prenom || !email || !password) {
     return res.status(400).json({ message: 'Tous les champs sont requis' });
@@ -41,6 +42,7 @@ export const adminregister = async (req, res) => {
         prenom,
         email,
         password: bcryptjs.hashSync(password, 8),
+        role: "ADMIN", // Ou la valeur appropriée pour le rôle
       },
     });
 
@@ -59,6 +61,8 @@ export const adminregister = async (req, res) => {
 // connecter un administrateur
 export const adminlogin = async (req, res) => {
   const { email, password } = req.body;
+  console.log('Tentative de connexion:', email);
+
 
   if (!email || !password) {
     return res.status(400).json({ message: 'tous les champs sont requis' });
@@ -75,7 +79,7 @@ export const adminlogin = async (req, res) => {
 
     const token = jwt.sign(
       { adminId: admin.id },
-      process.env.jwt_SECRET,
+      console.log('JWT Secret:', process.env.JWT_SECRET),
       { expiresIn: '72h' },
     );
 

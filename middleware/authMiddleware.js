@@ -20,7 +20,7 @@ export const authenticate = (req, res, next) => {
 
     // Vérifier si l'utilisateur est un administrateur
     if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "Non autorisé en tant qu'administrateur" })
+      return res.status(403).json({ message: "vous n'etes pas administrateur" })
     }
 
     next()

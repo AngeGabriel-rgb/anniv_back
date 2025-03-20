@@ -15,12 +15,13 @@ datasource db {
 }
 
 model Admin {
-    id       Int    @id @default(autoincrement())
-    email    String @unique
-    password String
-    role     String
-    nom      String // Assurez-vous que ce champ est bien défini
-    emailConfirmed  Boolean    @default(false)
+    id              Int       @id @default(autoincrement())
+    nom             String
+    prenom          String    // Assurez-vous que ce champ est présent
+    email           String    @unique
+    password        String
+    role            String
+    emailConfirmed  Boolean   @default(false)
     anniversaires   Anniversaire[]
 }
 
