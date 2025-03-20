@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
 
+const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
 // Récupérer tous les anniversaires
-export const getAllAnniversaires = async (req, res) => {
+export const getAllAnniversaires = async (_req, res) => {
   try {
     const anniversaires = await prisma.anniversaire.findMany({
       include: {

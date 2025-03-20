@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "main": "nodemon app.js",
-  "scripts": { 
+  "scripts": {
     "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,6 +19,9 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.10.0",
-    "prisma": "^6.4.1"
+    "prisma": "^6.5.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.2"
   }
 }

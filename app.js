@@ -2,16 +2,18 @@ import express from 'express';
 import participantRoutes from './routes/participantRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import anniversaireRoutes from './routes/anniversaireRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import bcryptjs from 'bcryptjs';
+import pkg from '@prisma/client';
 
-const prisma = new PrismaClient();
+const { PrismaClient } = pkg;
 
 dotenv.config();
 
 const app = express();
+const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {
   res.send('happy birthday');
@@ -20,43 +22,48 @@ app.get('/', async (req, res) => {
 // Configuration du middleware
 app.use(cors());
 app.use(express.json());
-// Routes
-app.use('/api/participants', participantRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/anniversaires', anniversaireRoutes);
 
-// erreur du middleware
+// Routes
+app.use('/participants', participantRoutes);
+app.use('/admin', adminRoutes);
+app.use('/anniversaires', anniversaireRoutes);
+app.use('/auths', authRoutes);
+
+// Middleware pour les erreurs
 app.use((req, res, next) => {
   const error = new Error('Page non trouvée');
   error.status = 404;
   next(error);
 });
 
+//creation d'un superadmin
 async function createSuperAdmin() {
-  const saltRounds = 10;
-  const plainPassword = "angelito2302"; // Remplacez par le mot de passe souhaité
+  const superAdmin = await prisma.user.findUnique({
+    where: { email: process.env.SUPER_ADMIN_EMAIL },
+  });
 
-  try {
-      const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
+  if (!superAdmin) {
+    // Hacher le mot de passe avant de le stocker
+    const hashedPassword = await bcryptjs.hash(process.env.SUPER_ADMIN_PASSWORD, 10); // Utilisez 10 pour le facteur de coût
 
-      const newUser = await prisma.user.create({
-          data: {
-              email: "gabrielange433@gmail.com",
-              password: hashedPassword,
-              role: "premieradmin",
-          },
-      });
-
-      console.log(' Administrateur créé:', newUser);
-  } catch (error) {
-      console.error('Erreur lors de la création de l\'administrateur:', error);
-  } finally {
-      await prisma.$disconnect(); // Déconnecter le client Prisma
+    await prisma.user.create({
+      data: {
+        nom: process.env.SUPER_ADMIN_NOM,
+        email: process.env.SUPER_ADMIN_EMAIL,
+        password: hashedPassword, // Utiliser le mot de passe haché
+        role: 'SUPER_ADMIN',
+      },
+    });
+    console.log('Super administrateur créé avec succès');
+  } else {
+    console.log('Super administrateur existe déjà');
   }
 }
 
 // Appelez la fonction pour créer le super administrateur
-createSuperAdmin();
+createSuperAdmin().catch((error) => {
+  console.error('Erreur lors de la création du super administrateur:', error);
+});
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 3001;

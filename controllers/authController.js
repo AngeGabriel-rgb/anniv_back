@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import bcryptjs from 'bcryptjs';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 
@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 // logique pour inscrire un administrateur
-export const adminRegister = async (req, res) => {
+export const adminregister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
 
   if (!nom || !prenom || !email || !password) {
@@ -40,7 +40,7 @@ export const adminRegister = async (req, res) => {
         nom,
         prenom,
         email,
-        password: bcrypt.hashSync(password, 8),
+        password: bcryptjs.hashSync(password, 8),
       },
     });
 
@@ -69,7 +69,7 @@ export const adminlogin = async (req, res) => {
       where: { email },
     });
 
-    if (!admin || !bcrypt.compareSync(password, admin.password)) {
+    if (!admin || !bcryptjs.compareSync(password, admin.password)) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
@@ -107,7 +107,7 @@ export const userLogin = async (req, res) => {
     }
 
     // Vérifier le mot de passe
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    const isPasswordValid = bcryptjs.compareSync(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Mot de passe incorrect' });
     }
@@ -142,7 +142,7 @@ export const participantRegister = async (req, res) => {
         nom,
         prenom,
         email,
-        password: bcrypt.hashSync(password, 8),
+        password: bcryptjs.hashSync(password, 8),
       },
     });
 
@@ -166,7 +166,7 @@ export const participantLogin = async (req, res) => {
       where: { email },
     });
 
-    if (!participant || !bcrypt.compareSync(password, participant.password)) {
+    if (!participant || !bcryptjs.compareSync(password, participant.password)) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 

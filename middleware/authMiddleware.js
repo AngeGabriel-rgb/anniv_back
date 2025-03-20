@@ -1,26 +1,36 @@
-import jwt from 'jsonwebtoken'; // Make sure to import jwt
+import jwt from "jsonwebtoken"
 
-const authenticate = (req, res, next) => {
+export const authenticate = (req, res, next) => {
   try {
-    const token = req.headers['authorization']?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Veuillez vous authentifier' });
+    // Récupérer le token depuis l'en-tête
+    const authHeader = req.headers.authorization
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Aucun token, autorisation refusée" })
     }
 
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "anniversaire"); // Use environment variable
+    // Extraire le token
+    const token = authHeader.split(" ")[1]
 
-    req.participantId = decodedToken.userId; // Adjust based on your token structure
-    req.adminId = decodedToken.adminId; // Adjust based on your token structure
+    // Vérifier le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-    if (!req.participantId) {
-      return res.status(401).json({ message: 'Veuillez vous authentifier' });
+    // Ajouter l'utilisateur du payload à la requête
+    req.user = decoded
+
+    // Vérifier si l'utilisateur est un administrateur
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Non autorisé en tant qu'administrateur" })
     }
 
-    next();
+    next()
   } catch (error) {
-    res.status(401).json({ message: 'Veuillez vous authentifier' });
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Token invalide" })
+    }
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expiré" })
+    }
+    res.status(500).json({ message: "Erreur serveur", error: error.message })
   }
-};
-
-export { authenticate };
+}
