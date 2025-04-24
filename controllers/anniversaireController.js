@@ -6,11 +6,7 @@ const prisma = new PrismaClient();
 // Récupérer tous les anniversaires
 export const getAllAnniversaires = async (_req, res) => {
   try {
-    const anniversaires = await prisma.anniversaire.findMany({
-      include: {
-        participants: true,
-      },
-    });
+    const anniversaires = await prisma.anniversaire.findMany({});
 
     res.json(anniversaires);
   } catch (error) {
@@ -26,10 +22,8 @@ export const getAnniversaireById = async (req, res) => {
   try {
     const anniversaire = await prisma.anniversaire.findUnique({
       where: { id: Number(id) },
-      include: {
-        participants: true,
-      },
-    });
+    include: undefined, // Remove or replace with valid fields if needed
+  });
 
     if (!anniversaire) {
       return res.status(404).json({ message: 'Anniversaire non trouvé' });
@@ -44,23 +38,21 @@ export const getAnniversaireById = async (req, res) => {
 
 // Créer un anniversaire
 export const createAnniversaire = async (req, res) => {
-  const { titre, date, participantIds } = req.body;
+  const { date, description, participantId, adminId } = req.body;
 
-  if (!titre || !date) {
-    return res.status(400).json({ message: 'Titre et date requis' });
+  // Vérification des champs requis
+  if (!date || !participantId || !adminId) {
+    return res.status(400).json({ message: 'Date, participant ID et admin ID requis' });
   }
 
   try {
+    // Création de l'anniversaire
     const anniversaire = await prisma.anniversaire.create({
       data: {
-        titre,
-        date: new Date(date),
-        participants: participantIds ? {
-          connect: participantIds.map(id => ({ id: Number(id) })),
-        } : undefined,
-      },
-      include: {
-        participants: true,
+        date: new Date(date), // Assurez-vous que la date est au bon format
+        description: description || null, // Valeur par défaut si description est absente
+        participantId: Number(participantId),
+        adminId: Number(adminId),
       },
     });
 

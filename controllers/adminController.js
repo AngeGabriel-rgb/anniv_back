@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 export const createAdmin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    
+
     // Vérifiez si l'email existe déjà
     const existingAdmin = await prisma.admin.findUnique({ where: { email } });
     if (existingAdmin) {
@@ -28,16 +28,18 @@ export const createAdmin = async (req, res) => {
       },
     });
 
-    // Générer un token JWT
-    const token = jwt.sign({ id: newAdmin.id, role: newAdmin.role }, process.env.JWT_SECRET, {
-      expiresIn: '4h',
-    });
+    // Générer un token JWT avec isAdmin
+    const token = jwt.sign(
+      { id: newAdmin.id, role: newAdmin.role, isAdmin: true }, // Ajoutez isAdmin ici
+      process.env.JWT_SECRET,
+      { expiresIn: '4h' }
+    );
 
     // Répondre avec le token et les informations de l'administrateur
     res.status(201).json({ message: 'Administrateur créé et connecté avec succès', token, admin: newAdmin });
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la création de l\'administrateur', error });
-  } 
+  }
 };
 
 // Obtenir tous les administrateurs
@@ -80,6 +82,7 @@ export const deleteAdmin = async (req, res) => {
 
     res.json({ message: 'Administrateur supprimé avec succès' });
   } catch (error) {
+    console.error('Erreur lors de la suppression de l\'administrateur:', error);
     res.status(500).json({ message: 'Erreur lors de la suppression de l\'administrateur', error });
   }
 };

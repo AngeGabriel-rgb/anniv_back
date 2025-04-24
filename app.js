@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import bcryptjs from 'bcryptjs';
 import pkg from '@prisma/client';
+import { confirmEmail } from './controllers/authController.js';
 
 const { PrismaClient } = pkg;
 
@@ -28,12 +29,18 @@ app.use('/participants', participantRoutes);
 app.use('/admin', adminRoutes);
 app.use('/anniversaires', anniversaireRoutes);
 app.use('/auths', authRoutes);
-
 // Middleware pour les erreurs
 app.use((req, res, next) => {
   const error = new Error('Page non trouvée');
   error.status = 404;
   next(error);
+});
+
+// Gestionnaire global des erreurs
+app.use((error, req, res, next) => {
+  res.status(error.status || 500).json({
+    message: error.message || 'Une erreur est survenue',
+  });
 });
 
 //creation d'un superadmin
@@ -51,7 +58,7 @@ async function createSuperAdmin() {
         nom: process.env.SUPER_ADMIN_NOM,
         email: process.env.SUPER_ADMIN_EMAIL,
         password: hashedPassword, // Utiliser le mot de passe haché
-        role: 'SUPER_ADMIN',
+        role: 'USER',
       },
     });
     console.log('Super administrateur créé avec succès');
@@ -66,7 +73,7 @@ createSuperAdmin().catch((error) => {
 });
 
 // Démarrer le serveur
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Serveur en ligne sur le port ${PORT}`);
 });

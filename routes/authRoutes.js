@@ -13,8 +13,10 @@ const router = express.Router();
 // Routes d'authentification pour les administrateurs
 router.post('/admin/login', adminlogin);
 router.post('/admin/register', adminregister); 
+
 //Routes d'auth pour le super admin
-router.post('/user/login', userLogin)
+router.post('/user/login', userLogin);
+
 // Routes d'authentification pour les participants
 router.post('/participants/register', participantRegister);
 router.get('/participants/confirm-email', confirmEmail);
