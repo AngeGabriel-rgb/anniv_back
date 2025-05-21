@@ -58,14 +58,12 @@ export const adminregister = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
-// connecter un administrateur
 export const adminlogin = async (req, res) => {
   const { email, password } = req.body;
   console.log('Tentative de connexion:', email);
 
-
   if (!email || !password) {
-    return res.status(400).json({ message: 'tous les champs sont requis' });
+    return res.status(400).json({ message: 'Tous les champs sont requis' });
   }
 
   try {
@@ -77,10 +75,14 @@ export const adminlogin = async (req, res) => {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
+    // Debug: Affiche le secret pour vérification
+    console.log('JWT Secret utilisé:', process.env.JWT_SECRET || 'anniversaire');
+
+    // Correction ici ↓
     const token = jwt.sign(
-      { adminId: admin.id, isAdmin:true },
-      console.log('JWT Secret:', process.env.JWT_SECRET),
-      { expiresIn: '72h' },
+      { adminId: admin.id, isAdmin: true },
+      process.env.JWT_SECRET || 'anniversaire', // Utilise soit la variable d'environnement, soit une valeur par défaut
+      { expiresIn: '72h' }
     );
 
     res.json({ token });
