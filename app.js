@@ -16,33 +16,6 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-// Configuration de nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_SECURE === 'true',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Fonction pour envoyer un email
-const sendEmail = async (to, subject, html) => {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to,
-    subject,
-    html,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Email envoyé à ${to}`);
-  } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
-  }
-};
 
 app.get('/', async (req, res) => {
   res.send('Happy Birthday');

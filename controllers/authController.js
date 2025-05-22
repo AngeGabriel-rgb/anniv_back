@@ -1,24 +1,25 @@
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcryptjs from 'bcryptjs';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 
 dotenv.config();
-
+const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
-// nodemailer configuration
+// Configuration de nodemailer
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+  secure: process.env.EMAIL_SECURE === 'true', // true pour 465, false pour d'autres ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
-// logique pour inscrire un administrateur
+
+// Logique pour inscrire un administrateur
 export const adminregister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
 
@@ -27,7 +28,6 @@ export const adminregister = async (req, res) => {
   }
 
   try {
-    // Vérifier si l'email est déjà utilisé
     const existingAdmin = await prisma.admin.findUnique({
       where: { email },
     });
@@ -41,13 +41,12 @@ export const adminregister = async (req, res) => {
         prenom,
         email,
         password: bcryptjs.hashSync(password, 8),
-        role: "ADMIN", // Ou la valeur appropriée pour le rôle
+        role: "ADMIN",
       },
     });
 
-    // Générer un token JWT avec isAdmin
     const token = jwt.sign(
-      { adminId: admin.id, isAdmin: true }, // Ajoutez isAdmin ici
+      { adminId: admin.id, isAdmin: true },
       process.env.JWT_SECRET,
       { expiresIn: '72h' }
     );

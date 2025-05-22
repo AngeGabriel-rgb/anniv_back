@@ -1,19 +1,20 @@
 import pkg from '@prisma/client';
 const { PrismaClient } = pkg;
 import nodemailer from 'nodemailer';
+import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Configuration de nodemailer
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_SECURE === 'true',
+  host: 'smtp.gmail.com', // Hôte SMTP pour Gmail
+  port: 587,              // Port pour TLS
+  secure: false,          // true pour le port 465, false pour 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER, // Votre adresse Gmail
+    pass: process.env.EMAIL_PASS,  // Votre mot de passe ou mot de passe d'application
   },
 });
+
 
 // Fonction pour générer un code unique
 const generateUniqueCode = () => {
@@ -30,204 +31,145 @@ const generateUniqueCode = () => {
 };
 
 // Récupérer tous les participants
-export const getAllParticipants = async (req, res) => {
+const getAllParticipants = async (req, res) => {
   try {
     const participants = await prisma.participant.findMany({
       include: {
-        anniversaires: true, // Inclut les anniversaires si nécessaire
+        anniversaires: true,
       },
     });
     res.json(participants);
   } catch (error) {
     console.error('Erreur lors de la récupération des participants:', error);
-    res.status(500).json({ message: 'Erreur lors de la récupération des participants' });
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
 // Créer un participant
-export const createParticipant = async (req, res) => {
+const createParticipant = async (req, res) => {
   const { nom, prenom, email } = req.body;
   
   try {
-    // Vérifier si l'email existe déjà
-    const existingParticipant = await prisma.participant.findUnique({
-      where: { email },
-    });
-    
+    // Vérification email existant
+    const existingParticipant = await prisma.participant.findUnique({ where: { email } });
     if (existingParticipant) {
-      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+      return res.status(400).json({ message: 'Email déjà utilisé' });
     }
-    
-    // Générer un code unique
+
     const code_unique = generateUniqueCode();
-    
-    // Créer le participant
+    const hashedPassword = await bcryptjs.hash(code_unique, 10);
+
     const participant = await prisma.participant.create({
       data: {
         nom,
         prenom,
         email,
         code_unique,
-        est_confirme: true, // Administrateur crée directement un participant confirmé
+        est_confirme: true,
+        password: hashedPassword
       },
     });
-    
-    // Envoyer l'email avec le code unique
-    const mailOptions = {
+
+    // Envoi email
+    await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: email,
-      subject: 'Votre code unique',
+      subject: 'Vos identifiants',
       html: `
-        <h2>Votre code unique</h2>
-        <p>Bonjour ${prenom} ${nom},</p>
-        <p>Un compte a été créé pour vous sur notre plateforme de gestion des participants.</p>
-        <p>Voici votre code unique pour accéder à notre plateforme :</p>
-        <p style="font-size: 24px; font-weight: bold; text-align: center; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">${code_unique}</p>
-        <p>Conservez ce code précieusement, il vous sera demandé lors de la connexion.</p>
-        <p>Si vous n'êtes pas à l'origine de cette demande, veuillez nous contacter immédiatement.</p>
+        <h2>Bienvenue ${prenom} ${nom}</h2>
+        <p>Votre compte a été créé avec succès.</p>
+        <p><strong>Code d'accès :</strong> ${code_unique}</p>
+        <p><strong>Mot de passe temporaire :</strong> ${code_unique}</p>
+        <p>Changez ce mot de passe après votre première connexion.</p>
       `,
-    };
-    
-    await transporter.sendMail(mailOptions);
-    
-    res.status(201).json(participant);
+    });
+
+    const { password, ...participantData } = participant;
+    res.status(201).json(participantData);
+
   } catch (error) {
-    console.error('Erreur lors de la création du participant:', error);
-    res.status(500).json({ message: 'Erreur lors de la création du participant' });
+    console.error('Erreur création participant:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
 // Récupérer un participant par ID
-export const getParticipantById = async (req, res) => {
-  const { id } = req.params;
-  
+const getParticipantById = async (req, res) => {
   try {
     const participant = await prisma.participant.findUnique({
-      where: { id: Number(id) },
-      include: {
-        anniversaires: true, // Inclut les anniversaires si nécessaire
-      },
+      where: { id: Number(req.params.id) },
+      include: { anniversaires: true },
     });
     
     if (!participant) {
       return res.status(404).json({ message: 'Participant non trouvé' });
     }
     
-    res.json(participant);
+    const { password, ...participantData } = participant;
+    res.json(participantData);
   } catch (error) {
-    console.error('Erreur lors de la récupération du participant:', error);
-    res.status(500).json({ message: 'Erreur lors de la récupération du participant' });
+    console.error('Erreur récupération participant:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
 // Mettre à jour un participant
-export const updateParticipant = async (req, res) => {
-  const { id } = req.params;
-  const { nom, prenom, email } = req.body;
-  
+const updateParticipant = async (req, res) => {
   try {
-    // Vérifier si le participant existe
-    const existingParticipant = await prisma.participant.findUnique({
-      where: { id: Number(id) },
-    });
-    
-    if (!existingParticipant) {
-      return res.status(404).json({ message: 'Participant non trouvé' });
-    }
-    
-    // Vérifier si l'email est déjà utilisé par un autre participant
-    if (email !== existingParticipant.email) {
-      const emailExists = await prisma.participant.findUnique({
-        where: { email },
-      });
-      
-      if (emailExists) {
-        return res.status(400).json({ message: 'Cet email est déjà utilisé par un autre participant' });
-      }
-    }
-    
-    // Mettre à jour le participant
     const participant = await prisma.participant.update({
-      where: { id: Number(id) },
-      data: { nom, prenom, email },
+      where: { id: Number(req.params.id) },
+      data: req.body,
     });
     
-    res.json(participant);
+    const { password, ...participantData } = participant;
+    res.json(participantData);
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du participant:', error);
-    res.status(500).json({ message: 'Erreur lors de la mise à jour du participant' });
+    console.error('Erreur mise à jour participant:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
 // Supprimer un participant
-export const deleteParticipant = async (req, res) => {
-  const { id } = req.params;
-  
+const deleteParticipant = async (req, res) => {
   try {
-    // Vérifier si le participant existe
-    const existingParticipant = await prisma.participant.findUnique({
-      where: { id: Number(id) },
-    });
-    
-    if (!existingParticipant) {
-      return res.status(404).json({ message: 'Participant non trouvé' });
-    }
-    
-    // Supprimer le participant
     await prisma.participant.delete({
-      where: { id: Number(id) },
+      where: { id: Number(req.params.id) },
     });
-    
-    res.json({ message: 'Participant supprimé avec succès' });
+    res.json({ message: 'Participant supprimé' });
   } catch (error) {
-    console.error('Erreur lors de la suppression du participant:', error);
-    res.status(500).json({ message: 'Erreur lors de la suppression du participant' });
+    console.error('Erreur suppression participant:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Régénérer et envoyer un nouveau code unique
-export const regenerateUniqueCode = async (req, res) => {
-  const { id } = req.params;
-  
+// Régénérer un code unique
+const regenerateUniqueCode = async (req, res) => {
   try {
-    // Vérifier si le participant existe
-    const existingParticipant = await prisma.participant.findUnique({
-      where: { id: Number(id) },
-    });
-    
-    if (!existingParticipant) {
-      return res.status(404).json({ message: 'Participant non trouvé' });
-    }
-    
-    // Générer un nouveau code unique
     const code_unique = generateUniqueCode();
-    
-    // Mettre à jour le participant avec le nouveau code
     const participant = await prisma.participant.update({
-      where: { id: Number(id) },
+      where: { id: Number(req.params.id) },
       data: { code_unique },
     });
-    
-    // Envoyer l'email avec le nouveau code unique
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
+
+    await transporter.sendMail({
       to: participant.email,
-      subject: 'Votre nouveau code unique',
-      html: `
-        <h2>Votre nouveau code unique</h2>
-        <p>Bonjour ${participant.prenom} ${participant.nom},</p>
-        <p>Voici votre nouveau code unique pour accéder à notre plateforme :</p>
-        <p style="font-size: 24px; font-weight: bold; text-align: center; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">${code_unique}</p>
-        <p>Conservez ce code précieusement, il vous sera demandé lors de la connexion.</p>
-        <p>Si vous n'êtes pas à l'origine de cette demande, veuillez nous contacter immédiatement.</p>
-      `,
-    };
-    
-    await transporter.sendMail(mailOptions);
-    
-    res.json({ message: 'Nouveau code unique généré et envoyé avec succès' });
+      subject: 'Nouveau code d\'accès',
+      html: `<p>Votre nouveau code: <strong>${code_unique}</strong></p>`
+    });
+
+    res.json({ message: 'Code régénéré' });
   } catch (error) {
-    console.error('Erreur lors de la régénération du code unique:', error);
-    res.status(500).json({ message: 'Erreur lors de la régénération du code unique' });
+    console.error('Erreur régénération code:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
+};
+
+// Export des fonctions
+export {
+  getAllParticipants,
+  createParticipant,
+  getParticipantById,
+  updateParticipant,
+  deleteParticipant,
+  regenerateUniqueCode
 };

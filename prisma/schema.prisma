@@ -28,13 +28,15 @@ model Admin {
 }
 
 model Participant {
-    id              Int       @id @default(autoincrement()) // Identifiant unique
-    nom             String    // Nom du participant
-    prenom          String    // Prénom du participant
-    email           String    @unique // E-mail unique pour le participant
-    password        String    // Mot de passe
-    emailConfirmed  Boolean   @default(false) // Indique si l'e-mail a été confirmé
-    anniversaires   Anniversaire[] // Relation avec les anniversaires
+  id            Int      @id @default(autoincrement())
+  nom           String
+  prenom        String
+  email         String   @unique
+  password      String
+  code_unique   String?  // Assurez-vous que ce champ existe
+  est_confirme  Boolean  // Vérifiez que ce champ est présent
+  emailConfirmed Boolean?
+  anniversaires  Anniversaire[]
 }
 
 model Anniversaire {
