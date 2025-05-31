@@ -6,6 +6,7 @@
   "main": "nodemon app.js",
   "scripts": {
     "start": "nodemon app.js",
+      "build": "your-build-command-here",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,11 +18,13 @@
     "@supabase/supabase-js": "^2.49.4",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "next": "^15.3.2",
     "nodemailer": "^6.10.1",
+    "nodemon": "^3.1.10",
     "prisma": "^6.5.0"
   },
   "devDependencies": {
