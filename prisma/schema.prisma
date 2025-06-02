@@ -34,8 +34,8 @@ model Participant {
   prenom        String
   email         String   @unique
   password      String
-  code_unique   String?  // Assurez-vous que ce champ existe
-  est_confirme  Boolean  // Vérifiez que ce champ est présent
+  code_unique   String?  
+  est_confirme  Boolean?  
   emailConfirmed Boolean?
   anniversaires  Anniversaire[]
 }

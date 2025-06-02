@@ -6,7 +6,7 @@
   "main": "nodemon app.js",
   "scripts": {
     "start": "nodemon app.js",
-    "build": "your-build-command-here",
+     "build": "echo 'No build step required for plain Node.js/Express'",
     "test": "echo \"Error: no test specified\" && exit 1",
      "prisma:generate": "prisma generate",
     "postinstall": "prisma generate && pnpm run build"

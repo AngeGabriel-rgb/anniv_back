@@ -10,14 +10,41 @@ const prisma = new PrismaClient();
 
 // Configuration de nodemailer
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_SECURE === 'true', // true pour 465, false pour d'autres ports
+  host: 'smtp.gmail.com', // Hôte SMTP pour Gmail
+  port: 587,              // Port pour TLS
+  secure: false,          // true pour le port 465, false pour 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER, // Votre adresse Gmail
+    pass: process.env.EMAIL_PASS,  // Votre mot de passe ou mot de passe d'application
   },
 });
+
+
+// Fonction pour envoyer un email de confirmation
+const sendConfirmationEmail = async (email, userId, isAdmin = false) => {
+  const token = jwt.sign(
+    { [isAdmin ? 'adminId' : 'userId']: userId },
+    process.env.JWT_SECRET || 'anniversaire',
+    { expiresIn: '24h' }
+  );
+
+  const confirmationLink = `${process.env.FRONTEND_URL}/confirm-email/${token}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Confirmation de votre email',
+    html: `
+      <h1>Merci pour votre inscription</h1>
+      <p>Veuillez confirmer votre adresse email en cliquant sur le lien ci-dessous :</p>
+      <a href="${confirmationLink}">Confirmer mon email</a>
+      <p>Ce lien expirera dans 24 heures.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
 
 // Logique pour inscrire un administrateur
 export const adminregister = async (req, res) => {
@@ -28,9 +55,7 @@ export const adminregister = async (req, res) => {
   }
 
   try {
-    const existingAdmin = await prisma.admin.findUnique({
-      where: { email },
-    });
+    const existingAdmin = await prisma.admin.findUnique({ where: { email } });
     if (existingAdmin) {
       return res.status(409).json({ message: 'Email déjà utilisé' });
     }
@@ -42,21 +67,30 @@ export const adminregister = async (req, res) => {
         email,
         password: bcryptjs.hashSync(password, 8),
         role: "ADMIN",
+        emailConfirmed: false,
       },
     });
 
+    // Envoi de l'email de confirmation
+    await sendConfirmationEmail(email, admin.id, true);
+
     const token = jwt.sign(
       { adminId: admin.id, isAdmin: true },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'anniversaire',
       { expiresIn: '72h' }
     );
 
-    res.status(201).json({ token });
+    res.status(201).json({ 
+      message: 'Admin inscrit. Un email de confirmation a été envoyé.',
+      token 
+    });
   } catch (error) {
     console.error('Erreur lors de l\'inscription de l\'administrateur:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
+// logique pour connecter un admin 
 export const adminlogin = async (req, res) => {
   const { email, password } = req.body;
   console.log('Tentative de connexion:', email);
@@ -133,27 +167,45 @@ export const userLogin = async (req, res) => {
 };
 
 
-// logique pour inscrire un participant   
+// Logique pour inscrire un participant
 export const participantRegister = async (req, res) => {
   const { nom, prenom, email, password } = req.body;
 
   if (!nom || !prenom || !email || !password) {
-    return res.status(400).json({ message: 'tous les champs sont requis' });
+    return res.status(400).json({ message: 'Les champs sont incomplets' });
   }
 
   try {
+    const existingParticipant = await prisma.participant.findUnique({ where: { email } });
+    if (existingParticipant) {
+      return res.status(409).json({ message: 'Email déjà utilisé' });
+    }
+
     const participant = await prisma.participant.create({
       data: {
         nom,
         prenom,
         email,
         password: bcryptjs.hashSync(password, 8),
+        est_confirme: false,
+        emailConfirmed: false,
+        code_unique: Math.random().toString(36).substring(2, 10).toUpperCase(),
       },
     });
 
-    res.status(201).json({ message: 'Participant inscrit' });
+    // Envoi de l'email de confirmation
+    await sendConfirmationEmail(email, participant.id);
+
+    res.status(201).json({ 
+      message: 'Participant inscrit. Un email de confirmation a été envoyé.' 
+    });
   } catch (error) {
     console.error('Erreur lors de l\'inscription du participant:', error);
+    
+    if (error.code === 'P2002') {
+      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+    }
+    
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
@@ -187,31 +239,44 @@ export const participantLogin = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
-// confirmation du mail
+// Confirmation de l'email
 export const confirmEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    const decoded = jwt.verify(token, process.env.jwt_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'anniversaire');
     const { adminId, userId } = decoded;
 
     if (adminId) {
       await prisma.admin.update({
         where: { id: adminId },
-        data: { emailConfirmed: true },
+        data: { 
+          emailConfirmed: true,
+          est_confirme: true 
+        },
       });
-      res.status(200).json({ message: 'Email administrateur confirmé' });
-    } else if (userId) {
+      return res.status(200).json({ message: 'Email administrateur confirmé' });
+    } 
+    
+    if (userId) {
       await prisma.participant.update({
         where: { id: userId },
-        data: { emailConfirmed: true },
+        data: { 
+          emailConfirmed: true,
+          est_confirme: true 
+        },
       });
-      res.status(200).json({ message: 'Email participant confirmé' });
-    } else {
-      res.status(400).json({ message: 'Token invalide' });
+      return res.status(200).json({ message: 'Email participant confirmé' });
     }
+
+    return res.status(400).json({ message: 'Token invalide' });
   } catch (error) {
     console.error('Erreur lors de la confirmation de l\'email:', error);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Le lien de confirmation a expiré' });
+    }
+    
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
