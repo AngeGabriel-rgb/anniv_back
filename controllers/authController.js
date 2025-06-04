@@ -27,9 +27,9 @@ const sendConfirmationEmail = async (email, userId, isAdmin = false) => {
     process.env.JWT_SECRET || 'anniversaire',
     { expiresIn: '24h' }
   );
-
-  const confirmationLink = `${process.env.FRONTEND_URL}/confirm-email/${token}`;
-  
+  // Rediriger vers le tableau de bord du participant
+  const confirmationLink = `${process.env.FRONTEND_URL}/particpant/dashboard/${token}`;
+   
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -239,6 +239,7 @@ export const participantLogin = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
 // Confirmation de l'email
 export const confirmEmail = async (req, res) => {
   const { token } = req.params;
