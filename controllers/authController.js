@@ -206,7 +206,7 @@ export const participantRegister = async (req, res) => {
       return res.status(400).json({ message: 'Cet email est déjà utilisé' });
     }
     
-    res.status(500).json({ message: 'Erreur serveur' });
+    res.status(500).json({ message: 'Erreur du serveur' });
   }
 };
 
@@ -229,7 +229,7 @@ export const participantLogin = async (req, res) => {
 
     const token = jwt.sign(
       { userId: participant.id },
-      process.env.jwt_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: '48h' },
     );
 
