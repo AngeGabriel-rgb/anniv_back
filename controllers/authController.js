@@ -108,7 +108,7 @@ export const adminlogin = async (req, res) => {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Debug: Affiche le secret pour vérification
+    // Affiche le secret pour vérification
     console.log('JWT Secret utilisé:', process.env.JWT_SECRET || 'anniversaire');
 
     // Correction ici ↓

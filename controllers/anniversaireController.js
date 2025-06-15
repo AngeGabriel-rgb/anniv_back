@@ -17,13 +17,15 @@ export const getAllAnniversaires = async (_req, res) => {
 
 // Récupérer un anniversaire par ID
 export const getAnniversaireById = async (req, res) => {
-  const { id } = req.params;
-
   try {
+    const { id } = req.params;
     const anniversaire = await prisma.anniversaire.findUnique({
       where: { id: Number(id) },
-    include: undefined, // Remove or replace with valid fields if needed
-  });
+      include: {
+        participants: true,
+        admin: true
+      }
+    });
 
     if (!anniversaire) {
       return res.status(404).json({ message: 'Anniversaire non trouvé' });
@@ -49,7 +51,7 @@ export const createAnniversaire = async (req, res) => {
     // Création de l'anniversaire
     const anniversaire = await prisma.anniversaire.create({
       data: {
-        date: new Date(date), // Assurez-vous que la date est au bon format
+        date: new Date(date),
         description: description || null, // Valeur par défaut si description est absente
         participantId: Number(participantId),
         adminId: Number(adminId),
