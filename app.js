@@ -7,7 +7,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import bcryptjs from 'bcryptjs';
 import pkg from '@prisma/client';
-import nodemailer from 'nodemailer';
+import swaggerJsDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 const { PrismaClient } = pkg;
 
@@ -16,20 +17,39 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
+// Configuration de Swagger
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API back',
+      version: '1.0.0',
+      description: 'Documentation de l\'API back',
+    },
+    servers: [
+      {
+        url: 'http://localhost:8000',
+      },
+    ],
+  },
+  apis: ['./routes/*.js'], // Chemin vers vos fichiers de routes
+};
 
-app.get('/', async (req, res) => {
-  res.send('Happy Birthday');
-});
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-// Configuration du middleware
-app.use(cors());
-app.use(express.json());
+// Route pour la documentation Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Routes
 app.use('/participants', participantRoutes);
 app.use('/admin', adminRoutes);
 app.use('/anniversaires', anniversaireRoutes);
 app.use('/auths', authRoutes);
+
+// Route de test
+app.get('/', async (req, res) => {
+  res.send('Happy Birthday');
+});
 
 // Middleware pour gérer les pages non trouvées
 app.use((req, res, next) => {
