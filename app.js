@@ -16,6 +16,9 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
+// Middleware pour analyser le corps des requêtes JSON
+app.use(express.json());
+
 // Configuration de Swagger
 const swaggerOptions = {
   swaggerDefinition: {
@@ -63,36 +66,6 @@ app.use((error, req, res, next) => {
     message: error.message || 'Une erreur est survenue',
   });
 });
-
-// Création d'un super administrateur
-async function createSuperAdmin() {
-  try {
-    const superAdmin = await prisma.user.findUnique({
-      where: { email: process.env.SUPER_ADMIN_EMAIL },
-    });
-
-    if (!superAdmin) {
-      const hashedPassword = await bcryptjs.hash(process.env.SUPER_ADMIN_PASSWORD, 10);
-
-      await prisma.user.create({
-        data: {
-          nom: process.env.SUPER_ADMIN_NOM,
-          email: process.env.SUPER_ADMIN_EMAIL,
-          password: hashedPassword,
-          role: 'USER',
-        },
-      });
-      console.log('Super administrateur créé avec succès');
-    } else {
-      console.log('Super administrateur existe déjà');
-    }
-  } catch (error) {
-    console.error('Erreur lors de la création du super administrateur:', error);
-  }
-}
-
-// Appelez la fonction pour créer le super administrateur
-createSuperAdmin();
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 8000;

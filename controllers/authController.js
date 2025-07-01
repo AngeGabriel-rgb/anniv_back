@@ -236,7 +236,7 @@ export const participantLogin = async (req, res) => {
     res.json({ token });
   } catch (error) {
     console.error('Erreur lors de la connexion du participant:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    res.status(500).json({ message: 'Erreur du  serveur' });
   }
 };
 
