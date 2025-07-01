@@ -4,7 +4,6 @@ import adminRoutes from './routes/adminRoutes.js';
 import anniversaireRoutes from './routes/anniversaireRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import bcryptjs from 'bcryptjs';
 import pkg from '@prisma/client';
 import swaggerJsDoc from 'swagger-jsdoc';
@@ -28,11 +27,11 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:8000',
+        url: 'https://anniversaire-back.onrender.com', // URL de votre serveur
       },
     ],
   },
-  apis: ['./routes/*.js'], // Chemin vers vos fichiers de routes
+  apis: ['./routes/*.js'], 
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
